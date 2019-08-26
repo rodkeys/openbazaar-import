@@ -12,7 +12,7 @@
 
 2. Upload your exported CSV sheet to the root folder
 
-3. Edit "config.json" to update 
+3. Edit "config.json" to update:
 
 - Your OpenBazaar node settings. By default the settings will upload to your local node.
 
