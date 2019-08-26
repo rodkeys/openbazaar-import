@@ -1,0 +1,41 @@
+{
+    "openbazaarNodeSettings": {
+        "host": "localhost",
+        "port": 4002,
+        "protocol": "http",
+        "username": null,
+        "password": null
+    },
+    "csvSettings" : {
+        "fileName": "products_export.csv"
+    },
+    "defaultProductSettings":
+    {
+        "contractType": "PHYSICAL_GOOD",
+        "format": "FIXED_PRICE",
+        "acceptedCurrencies": ["BTC", "LTC", "BCH", "ZEC"],
+        "pricingCurrency": "USD",
+        "productExpiry": "2137-12-31T05:00:00.000Z",
+        "shippingOptions": [{
+            "name": " ",
+            "type": "FIXED_PRICE",
+            "regions": ["ALL"],
+            "services": [{
+                "name": " ",
+                "price": 0,
+                "estimatedDelivery": " "
+            }]
+        }],
+        "item":
+        {
+            "condition": "",
+            "processingTime": "",
+            "nsfw": false
+        },
+        "termsAndConditions": "",
+        "refundPolicy": "",
+        "taxes": [],
+        "coupons": [],
+        "moderators": ["QmY1rgTAYwvXALRoKRSrVCsd67JaN2A5S9NZufiupATkm3"]
+    }
+}
