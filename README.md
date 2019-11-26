@@ -3,6 +3,7 @@
 **Platforms Supported**
 
 * Shopify
+* Woocommerce
 * More coming soon!
 
 
@@ -16,13 +17,13 @@
 
 - Your OpenBazaar node settings. By default the settings will upload to your local node.
 
-- The fileName of your CSV sheet in the root folder.
-
 - In "defaultProductSettings" make sure to edit "shippingOptions" to reflect the shipping areas you will ship to. You can add multiple shipping options for this field.
 
 - Under "defaultProductSettings" add any other default information you would like to include.
 
-4. Run the import script by running the command "node index.js"
+4. Run the import script by running the command "node import *platform* *csv File name"
+
+A valid example command would be: **node import shopify products_export.csv**
 
 
 **Notes**

@@ -6,9 +6,6 @@
         "username": null,
         "password": null
     },
-    "csvSettings" : {
-        "fileName": "products_export.csv"
-    },
     "defaultProductSettings":
     {
         "contractType": "PHYSICAL_GOOD",

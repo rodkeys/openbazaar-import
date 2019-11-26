@@ -1,5 +1,5 @@
 const config = require("../config.json"),
-fs = require("fs"),
+    fs = require("fs"),
     request = require("request");
 
 
@@ -45,7 +45,7 @@ exports.getOBAuth = (config) => {
         base64Credential = Buffer.from(combinedCredential).toString("base64"),
         readyCredential = `Basic ${base64Credential}`;
 
-    return {"Authorization": readyCredential};
+    return { "Authorization": readyCredential };
 }
 
 exports.sendListingToOpenBazaarNode = (data) => {
@@ -99,11 +99,63 @@ exports.createVendorListing = (data) => {
     return new Promise(async (resolve, reject) => {
         // Reformat listing data to match OB's specifications
         const listingOne = this.generateOBProductObject(data);
-
         this.sendListingToOpenBazaarNode(listingOne).then(() => {
             resolve(listingOne);
         }).catch((err) => {
             reject(err);
         })
+    });
+};
+
+// Do special format techniques 
+exports.formatListingForImport = (listingOne) => {
+    if (listingOne.title) {
+        listingOne.title = listingOne.title.slice(0, 140);
+    };
+
+    if (listingOne.description) {
+        listingOne.description = listingOne.description.slice(0, 2500);
+    };
+
+    if (listingOne.tags) {
+        listingOne.tags = listingOne.tags.slice(0, 10);
+    };
+
+    for (let i = 0; i < listingOne.tags.length; i++) {
+        listingOne.tags[i] = listingOne.tags[i].slice(0, 40);
+    };
+
+    if (listingOne.categories) {
+        listingOne.categories = listingOne.categories.slice(0, 10);
+    };
+
+    for (let i = 0; i < listingOne.categories.length; i++) {
+        listingOne.categories[i] = listingOne.categories[i].slice(0, 40);
+    };
+
+    if (listingOne.skus) {
+        for (let i = 0; i < listingOne.skus.length; i++) {
+            if (listingOne.skus[i].productID) {
+                listingOne.skus[i].productID = listingOne.skus[i].productID.slice(0, 40);
+            }
+        }
+    };
+
+    return listingOne;
+};
+
+exports.captureSinglePlatformImage = (productUrl) => {
+    return new Promise(async (resolve, reject) => {
+        request.get({
+            headers: { 'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36" },
+            url: productUrl,
+            encoding: "binary"
+        }, function(error, response, body) {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(Buffer.from(body, "binary").toString("base64"))
+            };
+        });
     });
 };

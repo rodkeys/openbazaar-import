@@ -1,30 +1,13 @@
 const sharedImportCtrl = require("../shared/reformatListing"),
     request = require("request");
 
-exports.captureSingleShopifyImage = (productUrl) => {
-    return new Promise(async (resolve, reject) => {
-        request.get({
-            headers: { 'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36" },
-            url: productUrl,
-            encoding: "binary"
-        }, function(error, response, body) {
-            if (error) {
-                reject(error);
-            } else {
-                resolve(Buffer.from(body, "binary").toString("base64"))
-            };
-        });
-    });
-};
-
-
-
-
 
 // Import a list of products
-exports.importShopifyProductListings = async (importData) => {
+exports.importShopifyProductListings = async (importDataRaw) => {
     // This will be where we construct the listing based on 
-    let listingSuccessArray = [],
+    let importData = JSON.parse(JSON.stringify(importDataRaw)),
+        // This will be where we construct the listing based on 
+        listingSuccessArray = [],
         listingErrorsArray = [];
 
     // Assign property names to a referenceable index
@@ -33,19 +16,14 @@ exports.importShopifyProductListings = async (importData) => {
         propertyFields[importData[0][i]] = i;
     };
 
+
     // Remove first row because it's the property field
     importData.splice(0, 1);
 
-    // Remove empty or incomplete rows
-    for (let i = 0; i < importData.length; i++) {
-        if (importData[i].length != Object.keys(propertyFields).length) {
-            importData.splice(i, 1);
-            i--;
-        };
-    };
-
     // Separate each handle (this denotes an individual listing)
     let handleObj = {};
+
+
 
     for (let i = 0; i < importData.length; i++) {
         if (handleObj[importData[i][propertyFields["Handle"]]]) {
@@ -55,9 +33,10 @@ exports.importShopifyProductListings = async (importData) => {
         };
     };
 
+
     // Each run of for loop represents a single handle
     for (let i = 0; i < Object.keys(handleObj).length; i++) {
-        console.log(`Product ${i + 1}/${Object.keys(handleObj).length} is being imported`)
+
         // Array of all rows for a specific handle
         let handleArrays = handleObj[Object.keys(handleObj)[i]],
             // Assemble an array of option names and their associated variants
@@ -66,6 +45,9 @@ exports.importShopifyProductListings = async (importData) => {
             imageArray = [],
             // Determine lowest price (used in surcharge calculation)
             lowestPrice;
+
+        // Need to remove data from overall importData to mark that we used it
+        // importData.splice(0, handleArrays.length)
 
         // Need to assemble all variants {name: "size", variants: [{name: 'small'}] }
         for (let y = 0; y < handleArrays.length; y++) {
@@ -102,35 +84,52 @@ exports.importShopifyProductListings = async (importData) => {
             }
         };
 
+        // If handleArrays is empty then skip a for loop
+        if (handleArrays.length == 0) {
+            continue;
+        };
+
         // Format prices for OB
         lowestPrice = lowestPrice * 100;
 
         // Every handleArray is correlated with the number of possible options to choose from
-        // Therefore each handleArray will have on corresponding sku
+        // Therefore each handleArray will have one corresponding sku
         for (let y = 0; y < handleArrays.length; y++) {
 
-            let variantCombo = [],
+            let variantInventory,
+                variantCombo = [],
                 stringVariantCombo = [],
                 variantPrice = Number(handleArrays[y][propertyFields[`Variant Price`]]) * 100,
-                variantInventory = Number(handleArrays[y][propertyFields[`Variant Inventory Qty`]]),
-                variantProductID = handleArrays[y][propertyFields[`Variant SKU`]]
+                variantProductID = handleArrays[y][propertyFields[`Variant SKU`]];
 
+            if (handleArrays[y][propertyFields[`Variant Inventory Qty`]] == null || handleArrays[y][propertyFields[`Variant Inventory Qty`]] == "") {
+                variantInventory = handleArrays[y][propertyFields[`Variant Inventory Qty`]];
+            } else {
+                variantInventory = Number(handleArrays[y][propertyFields[`Variant Inventory Qty`]]);
+            };
+
+            // Use this as a stand-in for the options array because you cannot change options array during the for loop
+            let modifiedOptionsArray = JSON.parse(JSON.stringify(optionsArray));
             // You need to generate a sku for every option that exists
             for (let z = 0; z < optionsArray.length; z++) {
                 // If there is one or fewer variants for an option then remove it (not compatible with OB rules) 
                 if (optionsArray[z].variantNames.length < 2) {
-                    optionsArray.splice(z, 1);
+                    modifiedOptionsArray.splice(z, 1);
                     continue;
-                }
-                let variantValue = handleArrays[y][propertyFields[`Option${z + 1} Value`]],
-                    variantIndex = optionsArray[z].variantNames.indexOf(variantValue);
+                } else {
 
-                // Assign variant indexes to skus
-                if (variantIndex != -1) {
-                    stringVariantCombo.push(variantValue);
-                    variantCombo.push(variantIndex);
+                    let variantValue = handleArrays[y][propertyFields[`Option${z + 1} Value`]],
+                        variantIndex = optionsArray[z].variantNames.indexOf(variantValue);
+
+                    // Assign variant indexes to skus
+                    if (variantIndex != -1) {
+                        stringVariantCombo.push(variantValue);
+                        variantCombo.push(variantIndex);
+                    }
                 }
             }
+
+            optionsArray = modifiedOptionsArray;
 
             if (handleArrays.length > 1 && variantCombo.length > 0) {
                 // Each loop will have one sku combination
@@ -147,18 +146,19 @@ exports.importShopifyProductListings = async (importData) => {
         let listingTags = handleArrays[0][propertyFields["Tags"]],
             listingCategories = handleArrays[0][propertyFields["Type"]];
 
-        if (listingTags != "") {
+        if (listingTags && listingTags != "") {
             listingTags = listingTags.split(", ");
         } else {
             listingTags = [];
-        }
+        };
 
-        if (listingCategories != "") {
+        if (listingCategories && listingCategories != "") {
             listingCategories = listingCategories.split(", ");
         } else {
             listingCategories = [];
         };
 
+        // The first array should have most of the important property fields
         let listingOne = {
             price: lowestPrice,
             acceptedCoins: [],
@@ -170,7 +170,7 @@ exports.importShopifyProductListings = async (importData) => {
             options: optionsArray,
             productNote: "",
             condition: "",
-            contractType: "",
+            contractType: "PHYSICAL_GOOD",
             termsAndConditions: "",
             refundPolicy: "",
             moderators: [],
@@ -185,22 +185,30 @@ exports.importShopifyProductListings = async (importData) => {
             listingOne.skus = skuArray;
             let inventoryCounter = 0;
             for (let i = 0; i < skuArray.length; i++) {
+                if (skuArray[i].inventory == null || skuArray[i].inventory == "") {
+                    inventoryCounter = null;
+                    break;
+                };
                 inventoryCounter += Number(skuArray[i].inventory);
             };
             listingOne.inventory = inventoryCounter;
         } else {
-            listingOne.inventory = Number(handleArrays[0][propertyFields["Variant Inventory Qty"]]);
+            if (handleArrays[0][propertyFields["Variant Inventory Qty"]] == null || handleArrays[0][propertyFields["Variant Inventory Qty"]] == "") {
+                listingOne.inventory = null;
+            } else {
+                listingOne.inventory = Number(handleArrays[0][propertyFields["Variant Inventory Qty"]]);
+            }
             listingOne.sku = handleArrays[0][propertyFields[`Variant SKU`]]
         };
 
-        // Reduce image array to max possible images per listing (6)
+     // Reduce image array to max possible images per listing (6)
         imageArray = imageArray.slice(0, 6);
 
         let imageList = [];
 
         for (let i = 0; i < imageArray.length; i++) {
             try {
-                imageList.push(await this.captureSingleShopifyImage(imageArray[i]));
+                imageList.push(await sharedImportCtrl.captureSinglePlatformImage(imageArray[i]));
             } catch (err) {
                 console.log(err);
             };
@@ -221,12 +229,20 @@ exports.importShopifyProductListings = async (importData) => {
 
         }
 
+        listingOne = sharedImportCtrl.formatListingForImport(listingOne);
+
+        console.log("");
+
         try {
             listingOne.images = formattedImageList;
             await sharedImportCtrl.createVendorListing(listingOne);
-            listingSuccessArray.push({ listingHandle: handleArrays[0][propertyFields["Handle"]] });
+            let importSuccess = { importStatus: "Success", listingHandle: handleArrays[0][propertyFields["Handle"]] };
+            console.log(importSuccess)
+            listingSuccessArray.push(importSuccess);
         } catch (err) {
-            listingErrorsArray.push({ message: err, listingHandle: handleArrays[0][propertyFields["Handle"]] });
+            let importFailure = { importStatus: "Failed", message: err, listingHandle: handleArrays[0][propertyFields["Handle"]] };
+            console.log(importFailure)
+            listingErrorsArray.push(importFailure);
         };
     };
 
