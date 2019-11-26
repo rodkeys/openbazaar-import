@@ -21,7 +21,7 @@
 
 - Under "defaultProductSettings" add any other default information you would like to include.
 
-4. Run the import script by running the command "node import *platform* *csv File name"
+4. Run the import script by running the command **node import *platform* *file_name***
 
 A valid example command would be: **node import shopify products_export.csv**
 
