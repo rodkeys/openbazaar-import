@@ -8,8 +8,6 @@ exports.generateOBProductObject = (data) => {
         item: {},
         metadata: {}
     };
-
-
     listing.item.title = data.title;
     listing.item.description = data.description;
     listing.item.tags = data.tags;
@@ -73,14 +71,21 @@ exports.sendListingToOpenBazaarNode = (data) => {
 exports.sendImagesToOpenBazaarNode = (imageList) => {
     return new Promise(async (resolve, reject) => {
         let openBazaarImageList = [];
-
-        for (let i = 0; i < imageList.length; i++) {
+        if (imageList.length == 0) {
+            // Use default image if no images are provided
+            const productImageFile = fs.readFileSync(__dirname + "/../static/openbazaar-logo.png");
             openBazaarImageList.push({
                 filename: String(Date.now()),
-                image: imageList[i]
+                image: productImageFile.toString("base64")
             });
-        };
-
+        } else {
+            for (let i = 0; i < imageList.length; i++) {
+                openBazaarImageList.push({
+                    filename: String(Date.now()),
+                    image: imageList[i]
+                });
+            };
+        }
         request.post({
             url: `${config.openbazaarNodeSettings.protocol}://${config.openbazaarNodeSettings.host}:${config.openbazaarNodeSettings.port}/ob/images`,
             json: openBazaarImageList,

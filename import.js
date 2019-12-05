@@ -1,5 +1,7 @@
 const shopifyImportCtrl = require("./importScripts/shopify"),
     woocommerceImportCtrl = require("./importScripts/woocommerce"),
+    magentoImportCtrl = require("./importScripts/magento"),
+    prestashopImportCtrl = require("./importScripts/prestashop"),
     fs = require("fs"),
     Papa = require('papaparse'),
     config = require("./config.json"),
@@ -19,7 +21,13 @@ const shopifyImportCtrl = require("./importScripts/shopify"),
                     } else if (importType == "woocommerce") {
                         rows = results.data;
                         formattedImportResults = await woocommerceImportCtrl.importWoocommerceProductListings(rows);
-                    } else {
+                    } else if (importType == "magento") {
+                        rows = results.data;
+                        formattedImportResults = await magentoImportCtrl.importMagentoProductListings(rows);
+                    } else if (importType == "prestashop") {
+                        rows = results.data;
+                        formattedImportResults = await prestashopImportCtrl.importPrestashopProductListings(rows);
+                    }   else {
                         console.log(`\nCSV type is not supported yet. \n\nCSV import options available are: "shopify" or "woocommerce". \n\nAn example valid command would be: "node import shopify products_export.csv"`);
                         return;
                     }

@@ -4,6 +4,8 @@
 
 * Shopify
 * Woocommerce
+* Magento
+* Prestashop
 * More coming soon!
 
 
