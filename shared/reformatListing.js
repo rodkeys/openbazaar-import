@@ -14,7 +14,11 @@ exports.generateOBProductObject = (data) => {
     listing.item.categories = data.categories;
     listing.item.nsfw = false;
     listing.item.condition = config.defaultProductSettings.item.condition;
-    listing.item.price = Number(data.price.toFixed(0));
+    listing.item.bigPrice = ""+parseInt(data.price*100);
+    listing.item.priceCurrency = {
+        "code": "USD",
+        "divisibility": 2,
+    }
     listing.item.options = data.options;
     listing.item.skus = data.skus;
     listing.item.processingTime = config.defaultProductSettings.item.processingTime;
@@ -104,6 +108,7 @@ exports.createVendorListing = (data) => {
     return new Promise(async (resolve, reject) => {
         // Reformat listing data to match OB's specifications
         const listingOne = this.generateOBProductObject(data);
+        console.log(listingOne);
         this.sendListingToOpenBazaarNode(listingOne).then(() => {
             resolve(listingOne);
         }).catch((err) => {

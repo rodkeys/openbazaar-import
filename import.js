@@ -2,6 +2,7 @@ const shopifyImportCtrl = require("./importScripts/shopify"),
     woocommerceImportCtrl = require("./importScripts/woocommerce"),
     magentoImportCtrl = require("./importScripts/magento"),
     prestashopImportCtrl = require("./importScripts/prestashop"),
+    amazonImportCtrl = require("./importScripts/amazon"),
     fs = require("fs"),
     Papa = require('papaparse'),
     config = require("./config.json"),
@@ -11,6 +12,19 @@ const shopifyImportCtrl = require("./importScripts/shopify"),
 
 (() => {
     if (importType && importFileName && process.argv.length == 4) {
+
+        // check for amazon URL
+        if(importType == "amazon") {
+            console.log("\nImporting Listings from Amazon URL\n");
+
+
+
+            // loadAmazonTopCategory('https://www.amazon.com/Best-Sellers-Electronics-Video-Game-Consoles-Accessories/zgbs/electronics/7926841011/');
+            amazonImportCtrl.loadAmazonTopCategory(process.argv.slice(-1)[0]);
+
+            return;
+        }
+
         if (fs.existsSync(importFileName)) {
             const importCSV = fs.createReadStream(`${importFileName}`);
             Papa.parse(importCSV, {
@@ -27,7 +41,11 @@ const shopifyImportCtrl = require("./importScripts/shopify"),
                     } else if (importType == "prestashop") {
                         rows = results.data;
                         formattedImportResults = await prestashopImportCtrl.importPrestashopProductListings(rows);
-                    }   else {
+                    } else if (importType == "amazon") {
+                        rows = results.data;
+                        formattedImportResults = await
+                        amazonImportCtrl.importAmazonProductListings(rows);
+                    } else {
                         console.log(`\nCSV type is not supported yet. \n\nCSV import options available are: "shopify" or "woocommerce". \n\nAn example valid command would be: "node import shopify products_export.csv"`);
                         return;
                     }

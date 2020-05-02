@@ -9,7 +9,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "crypto": "^1.0.1",
+    "node-fetch": "^2.6.0",
+    "node-html-parser": "^1.2.16",
     "papaparse": "^5.0.2",
-    "request": "^2.88.0"
+    "request": "^2.88.0",
+    "then-request": "^6.0.2"
   }
 }
